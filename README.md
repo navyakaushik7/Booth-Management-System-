@@ -5,7 +5,7 @@ OTP-based login system instead of the old fake demo login. Below is
 everything you need to run it, plus some notes on how it works and what I
 still need to double check.
 
-**Note on SMS:** this currently runs in "dev mode" — I don't have a live
+**Note on SMS:** this currently runs in "dev mode". I don't have a live
 Twilio subscription yet, so instead of texting the OTP to your phone, the
 app shows the code directly on the login screen. Everything else (the
 actual login logic, sessions, ward isolation, etc.) works exactly the same
