@@ -4,12 +4,6 @@ import { requireAuth, resolveWardScope } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
-
-/**
- * GET /api/analytics/overview
- * Returns { stats, wardStats, schemeDistribution } shaped for
- * StatCards.jsx and AnalyticsCharts.jsx on the frontend.
- */
 router.get('/overview', async (req, res) => {
   const wardId = resolveWardScope(req);
   const wardFilter = wardId ? 'WHERE ward_id = $1' : '';
@@ -31,8 +25,6 @@ router.get('/overview', async (req, res) => {
 
   const { total_voters, voted_count, pending_count } = totals.rows[0];
   const turnoutPercentage = total_voters > 0 ? Math.round((voted_count / total_voters) * 1000) / 10 : 0;
-
-  // Per-booth turnout for the bar chart
   const boothStats = await query(
     `SELECT b.name,
             COUNT(v.id) FILTER (WHERE v.has_voted)::int AS voted,
@@ -40,7 +32,7 @@ router.get('/overview', async (req, res) => {
      FROM booths b
      LEFT JOIN voters v ON v.booth_id = b.id
      ${wardId ? 'WHERE b.ward_id = $1' : ''}
-     GROUP BY b.id, b.name
+     GROUP BY b.ward_id, b.name
      ORDER BY b.name`,
     params
   );

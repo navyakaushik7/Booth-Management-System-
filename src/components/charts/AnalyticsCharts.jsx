@@ -3,11 +3,10 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, PieC
 import { useTheme } from '../../context/ThemeContext';
 
 const COLORS = ['#C08829', '#2F7A4D', '#46586B', '#B23A34', '#DFA94A'];
-const OTHER_COLOR = '#9A9284'; // neutral gray-brass for the grouped "Other" slice
+const OTHER_COLOR = '#9A9284'; // neutral gray-brass for grouped "Other" slices/bars
 
 // Keeps the pie chart legible: shows the top N schemes by enrollment and
-// folds everything else into a single "Other" slice instead of rendering
-// 15+ slivers with an overwhelming legend.
+// folds everything else into a single "Other" slice.
 function groupTopSchemes(schemeDistribution, topN = 5) {
   if (!schemeDistribution || schemeDistribution.length <= topN) {
     return schemeDistribution || [];
@@ -21,10 +20,36 @@ function groupTopSchemes(schemeDistribution, topN = 5) {
     : top;
 }
 
+// Same idea for the bar chart: with dozens of booths, showing every single
+// one guarantees overlapping labels no matter how they're angled. Rank by
+// total activity (voted + pending) and fold the long tail into "Other".
+// topN adapts to how much data there is, so it stays useful whether there
+// are 8 booths or 80.
+function groupTopBooths(wardStats, topN = 8) {
+  if (!wardStats || wardStats.length <= topN) {
+    return wardStats || [];
+  }
+  const withTotal = wardStats.map((b) => ({ ...b, _total: (b.voted || 0) + (b.pending || 0) }));
+  const sorted = [...withTotal].sort((a, b) => b._total - a._total);
+  const top = sorted.slice(0, topN);
+  const rest = sorted.slice(topN);
+  const otherVoted = rest.reduce((sum, b) => sum + (b.voted || 0), 0);
+  const otherPending = rest.reduce((sum, b) => sum + (b.pending || 0), 0);
+  const grouped = top.map(({ _total, ...b }) => b);
+  if (otherVoted + otherPending > 0) {
+    grouped.push({ name: `Other (${rest.length} booths)`, voted: otherVoted, pending: otherPending, isOther: true });
+  }
+  return grouped;
+}
+
 export default function AnalyticsCharts({ analytics }) {
   const { theme } = useTheme();
 
-  // Hooks must run unconditionally, so this sits above the early return below.
+  // Hooks must run unconditionally, so these sit above the early return below.
+  const groupedBooths = useMemo(
+    () => groupTopBooths(analytics?.wardStats),
+    [analytics?.wardStats]
+  );
   const groupedSchemes = useMemo(
     () => groupTopSchemes(analytics?.schemeDistribution),
     [analytics?.schemeDistribution]
@@ -42,32 +67,30 @@ export default function AnalyticsCharts({ analytics }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-      {/* ============== BAR CHART ============== */}
-      <div className="bg-white dark:bg-ink-light border border-black/10 dark:border-white/10 p-5 rounded-2xl shadow-xl h-96 flex flex-col">
-        <h3 className="font-semibold text-ink dark:text-paper mb-4 text-sm text-center">Ward Turnout (Bar Graph)</h3>
+      {/* ============== BAR CHART (wider: spans 2 of 3 columns) ============== */}
+      <div className="lg:col-span-2 bg-white dark:bg-ink-light border border-black/10 dark:border-white/10 p-5 rounded-2xl shadow-xl h-[420px] flex flex-col">
+        <h3 className="font-semibold text-ink dark:text-paper mb-4 text-sm text-center">Ward Turnout</h3>
         <div className="flex-1 w-full h-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={analytics.wardStats}
-              margin={{ top: 20, right: 10, left: 0, bottom: 20 }}
+              data={groupedBooths}
+              margin={{ top: 20, right: 10, left: 0, bottom: 30 }}
               barGap={4}
               barCategoryGap="25%"
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={axisColor} opacity={0.2} />
 
-              {/* Rotated + truncated labels so booth names can't overlap
-                  or run into each other regardless of how many booths exist. */}
               <XAxis
                 dataKey="name"
                 stroke={axisColor}
                 tick={{ angle: -35, textAnchor: 'end', fontSize: 11, fill: axisColor }}
                 interval={0}
-                height={70}
+                height={80}
                 tickLine={false}
                 axisLine={{ strokeOpacity: 0.3 }}
-                tickFormatter={(name) => (name.length > 10 ? `${name.slice(0, 10)}…` : name)}
+                tickFormatter={(name) => (name.length > 12 ? `${name.slice(0, 12)}…` : name)}
               />
               <YAxis
                 stroke={axisColor}
@@ -85,18 +108,18 @@ export default function AnalyticsCharts({ analytics }) {
         </div>
       </div>
 
-      {/* ============== PIE CHART ============== */}
-      <div className="bg-white dark:bg-ink-light border border-black/10 dark:border-white/10 p-5 rounded-2xl shadow-xl h-96 flex flex-col">
-        <h3 className="font-semibold text-ink dark:text-paper mb-4 text-sm text-center">Scheme Beneficiaries (Pie Chart)</h3>
+      {/* ============== PIE CHART (narrower: 1 of 3 columns) ============== */}
+      <div className="bg-white dark:bg-ink-light border border-black/10 dark:border-white/10 p-5 rounded-2xl shadow-xl h-[420px] flex flex-col">
+        <h3 className="font-semibold text-ink dark:text-paper mb-4 text-sm text-center">Scheme Beneficiaries </h3>
         <div className="flex-1 w-full h-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={groupedSchemes}
                 dataKey="value"
-                cx="40%"
-                cy="50%"
-                outerRadius={85}
+                cx="50%"
+                cy="45%"
+                outerRadius={75}
               >
                 {groupedSchemes.map((entry, i) => (
                   <Cell key={i} fill={entry.isOther ? OTHER_COLOR : COLORS[i % COLORS.length]} />
@@ -104,14 +127,10 @@ export default function AnalyticsCharts({ analytics }) {
               </Pie>
               <Tooltip contentStyle={tooltipStyle} />
               <Legend
-                layout="vertical"
-                verticalAlign="middle"
-                align="right"
-                wrapperStyle={{
-                  fontSize: '11px',
-                  width: '50%',
-                  paddingRight: '10px'
-                }}
+                layout="horizontal"
+                verticalAlign="bottom"
+                align="center"
+                wrapperStyle={{ fontSize: '11px' }}
               />
             </PieChart>
           </ResponsiveContainer>
