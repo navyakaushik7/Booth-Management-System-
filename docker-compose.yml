@@ -34,9 +34,6 @@ services:
       OTP_EXPIRY_MINUTES: 5
       OTP_MAX_ATTEMPTS: 5
       OTP_RESEND_COOLDOWN_SECONDS: 30
-      TWILIO_ACCOUNT_SID: $ {TWILIO_ACCOUNT_SID:-your_twilio_account_sid}
-      TWILIO_AUTH_TOKEN: 5108a91218bcb2c9658f1d9377f79b16
-      TWILIO_FROM_NUMBER: +17372212163
     ports:
       - "4000:4000"
     command: sh -c "node src/migrate.js && node src/seed.js && node server.js"
