@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const FEATURES = [
-  'Track ward-by-ward voter turnout and booth status in real time.',
-  'Digitize your voter register with one-click Excel import & export.',
-  'Secure OTP login over SMS — no passwords for staff to lose or share.'
+  'Monitor voter turnout and booth activity across your ward in real time.',
+  'Maintain a fully digital voter register with seamless Excel import and export.',
+  'Secure, password-free access via one-time SMS verification codes.'
 ];
 
 export default function Login() {
@@ -41,7 +41,7 @@ export default function Login() {
       setStep('otp');
       setCooldown(30);
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not send OTP. Try again.');
+      setError(err.response?.data?.error || 'Could not send the verification code. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -56,7 +56,7 @@ export default function Login() {
       setDevOtp(data.dev_otp || null);
       setCooldown(30);
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not resend OTP.');
+      setError(err.response?.data?.error || 'Could not resend the verification code.');
     } finally {
       setBusy(false);
     }
@@ -70,7 +70,7 @@ export default function Login() {
       await verifyOtp(phone, code);
       // AuthContext sets `user`; App's Gate component takes it from here
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid OTP. Please try again.');
+      setError(err.response?.data?.error || 'Invalid verification code. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -91,7 +91,7 @@ export default function Login() {
               <MapPin className="w-5 h-5 text-brass-light" />
             </div>
             <h1 className="text-2xl font-display font-semibold leading-snug">
-              Welcome aboard your<br />Booth Management Hub!
+              Booth Management System
             </h1>
             <ul className="mt-6 space-y-3">
               {FEATURES.map((f) => (
@@ -142,19 +142,19 @@ export default function Login() {
           </div>
 
           <h2 className="text-2xl font-display font-semibold text-ink dark:text-paper">
-            {step === 'phone' ? 'Login to your Account' : 'Verify your number'}
+            {step === 'phone' ? 'Sign In to Your Account' : 'Verify Your Number'}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">
             {step === 'phone'
-              ? 'Enter your registered phone number to receive a one-time code.'
-              : `Enter the 6-digit code sent to ${phone}`}
+              ? 'Please enter your registered mobile number to receive a verification code.'
+              : `A 6-digit verification code has been sent to ${phone}.`}
           </p>
 
           {step === 'phone' && (
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                  Registered phone number
+                  Registered Mobile Number
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -178,7 +178,7 @@ export default function Login() {
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brass hover:bg-brass-dark disabled:opacity-60 text-white text-sm font-semibold transition-colors"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Send OTP
+                Send Verification Code
               </button>
             </form>
           )}
@@ -187,7 +187,7 @@ export default function Login() {
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                  One-time password
+                  Verification Code
                 </label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -207,9 +207,8 @@ export default function Login() {
 
               {devOtp && (
                 <div className="text-xs bg-brass/10 border border-brass/30 text-brass-dark dark:text-brass-light rounded-lg px-3 py-2">
-                  No real SMS was delivered (Twilio isn't configured, or this number isn't
-                  a verified recipient yet). Your OTP is{' '}
-                  <span className="font-mono font-semibold">{devOtp}</span>.
+                  Development mode — SMS delivery is not configured, so no message was sent.
+                  Your verification code is <span className="font-mono font-semibold">{devOtp}</span>.
                 </div>
               )}
 
@@ -221,7 +220,7 @@ export default function Login() {
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brass hover:bg-brass-dark disabled:opacity-60 text-white text-sm font-semibold transition-colors"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Verify & Login
+                Verify and Sign In
               </button>
 
               <div className="flex items-center justify-between pt-1">
@@ -230,7 +229,7 @@ export default function Login() {
                   onClick={() => { setStep('phone'); setCode(''); setError(''); }}
                   className="text-xs text-slate-500 dark:text-slate-400 hover:text-ink dark:hover:text-paper"
                 >
-                  ← Change number
+                  ← Change Number
                 </button>
                 <button
                   type="button"
@@ -238,15 +237,15 @@ export default function Login() {
                   disabled={cooldown > 0 || busy}
                   className="text-xs text-brass hover:text-brass-dark disabled:text-slate-400"
                 >
-                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Code'}
                 </button>
               </div>
             </form>
           )}
 
           <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-8">
-            Only registered MLA / staff phone numbers can request an OTP.<br />
-            Need access? Contact your system administrator.
+            Access is restricted to registered MLA and staff accounts.<br />
+            For access requests, please contact your system administrator.
           </p>
         </div>
       </div>
